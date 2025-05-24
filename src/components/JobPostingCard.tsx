@@ -1,59 +1,41 @@
-import { Button } from "./ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "./ui/card";
-import { Badge } from "./ui/badge";
+import { Trash2, Pencil } from "lucide-react";
 import { JobPosting } from "../types";
-import { formatDistanceToNow } from "date-fns";
+import { Button } from "./ui/button";
+import { doc, deleteDoc } from "firebase/firestore";
+import { db } from "../lib/firebase";
 
 interface JobPostingCardProps {
-  jobPosting: JobPosting;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  job: JobPosting;
+  onEdit: () => void;
+  onRefresh: () => void;
 }
 
-export function JobPostingCard({ jobPosting, onEdit, onDelete }: JobPostingCardProps) {
-  const {
-    id,
-    title,
-    company,
-    publisher,
-    location,
-    description,
-    postedDate,
-    isActive,
-  } = jobPosting;
-
-  const formattedDate = formatDistanceToNow(new Date(postedDate), { addSuffix: true });
+export function JobPostingCard({ job, onEdit, onRefresh }: JobPostingCardProps) {
+  const handleDelete = async () => {
+    if (confirm("Are you sure you want to delete this job?")) {
+      try {
+        await deleteDoc(doc(db, "jobs", job.id));
+        console.log("Deleted from Firestore");
+        onRefresh();
+      } catch (error) {
+        console.error("Error deleting job:", error);
+      }
+    }
+  };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-xl font-bold">{title}</CardTitle>
-            <CardDescription className="text-base mt-1">{company} • {location}</CardDescription>
-          </div>
-          <Badge variant={isActive ? "default" : "secondary"}>
-            {isActive ? "Active" : "Inactive"}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm text-muted-foreground">Publisher: {publisher}</p>
-            <p className="text-sm text-muted-foreground">Posted: {formattedDate}</p>
-          </div>
-          <p className="text-sm line-clamp-3">{description}</p>
-        </div>
-      </CardContent>
-      <CardFooter className="flex justify-between">
-        <Button variant="outline" onClick={() => onEdit(id)}>
-          Edit
+    <div className="border rounded-lg p-4 shadow-md space-y-2">
+      <h3 className="text-lg font-semibold">{job.title}</h3>
+      <p className="text-sm text-gray-600">{job.company} — {job.location}</p>
+      <p className="text-sm">{job.description}</p>
+      <div className="flex gap-2 justify-end pt-2">
+        <Button variant="outline" size="sm" onClick={onEdit}>
+          <Pencil className="w-4 h-4 mr-1" /> Edit
         </Button>
-        <Button variant="destructive" onClick={() => onDelete(id)}>
-          Delete
+        <Button variant="destructive" size="sm" onClick={handleDelete}>
+          <Trash2 className="w-4 h-4 mr-1" /> Delete
         </Button>
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 }
