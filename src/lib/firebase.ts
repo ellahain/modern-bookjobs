@@ -2,14 +2,15 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAy-AUPrp8Pbs-FV-5Cj2hKmu5Kf6Off8A",
-  authDomain: "modern-bookjobs.firebaseapp.com",
-  projectId: "modern-bookjobs",
-  storageBucket: "modern-bookjobs.firebasestorage.app",
-  messagingSenderId: "431452301554",
-  appId: "1:431452301554:web:2311feb566462f9e78086b",
-  measurementId: "G-J4N5CV8375"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
+
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
