@@ -1,96 +1,71 @@
-import { useState } from "react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "./ui/dialog";
-import { Label } from "./ui/label";
+import { useState, useEffect } from "react";
+import { db } from "../lib/firebase";
+import { collection, addDoc, deleteDoc, doc, getDocs } from "firebase/firestore";
 import { Publisher } from "../types";
-import { useJobPostingsStore } from "../lib/store";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 
 interface PublisherFormProps {
   isOpen: boolean;
   onClose: () => void;
-  editingPublisher?: Publisher;
+  onSaveComplete: () => void;
 }
 
-export function PublisherForm({ isOpen, onClose, editingPublisher }: PublisherFormProps) {
-  const { addPublisher, updatePublisher } = useJobPostingsStore();
-  
-  const [formData, setFormData] = useState<Omit<Publisher, 'id'>>({
-    name: editingPublisher?.name || "",
-    website: editingPublisher?.website || "",
-    logo: editingPublisher?.logo || "",
-  });
+export function PublisherForm({ isOpen, onClose, onSaveComplete }: PublisherFormProps) {
+  const [formData, setFormData] = useState({ name: "", website: "" });
+  const [publishers, setPublishers] = useState<Publisher[]>([]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const fetchPublishers = async () => {
+    const snap = await getDocs(collection(db, "publishers"));
+    const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Publisher));
+    setPublishers(list);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (editingPublisher) {
-      updatePublisher(editingPublisher.id, formData);
-    } else {
-      addPublisher(formData);
-    }
-    
-    onClose();
+  useEffect(() => {
+    if (isOpen) fetchPublishers();
+  }, [isOpen]);
+
+  const handleAdd = async () => {
+    if (!formData.name.trim()) return;
+    await addDoc(collection(db, "publishers"), formData);
+    setFormData({ name: "", website: "" });
+    fetchPublishers();
+    onSaveComplete();
+  };
+
+  const handleDelete = async (id: string) => {
+    await deleteDoc(doc(db, "publishers", id));
+    fetchPublishers();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            {editingPublisher ? "Edit Publisher" : "Add New Publisher"}
-          </DialogTitle>
+          <DialogTitle>Manage Publishers</DialogTitle>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">Publisher Name</Label>
-            <Input
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="website">Website URL</Label>
-            <Input
-              id="website"
-              name="website"
-              type="url"
-              value={formData.website}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="logo">Logo URL (optional)</Label>
-            <Input
-              id="logo"
-              name="logo"
-              type="url"
-              value={formData.logo || ""}
-              onChange={handleChange}
-            />
-          </div>
-          
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit">
-              {editingPublisher ? "Update" : "Add"} Publisher
-            </Button>
-          </DialogFooter>
-        </form>
+        <div className="space-y-2">
+          <Input
+            placeholder="Publisher Name"
+            value={formData.name}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+          />
+          <Input
+            placeholder="Publisher Website"
+            value={formData.website}
+            onChange={(e) => setFormData(prev => ({ ...prev, website: e.target.value }))}
+          />
+          <Button onClick={handleAdd}>Add Publisher</Button>
+        </div>
+        <ul className="mt-4 space-y-1">
+          {publishers.map(p => (
+            <li key={p.id} className="flex justify-between border-b py-1">
+              <span>{p.name}</span>
+              <Button variant="ghost" size="sm" onClick={() => handleDelete(p.id)}>Delete</Button>
+            </li>
+          ))}
+        </ul>
       </DialogContent>
     </Dialog>
   );
