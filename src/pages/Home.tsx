@@ -22,7 +22,9 @@ export default function Home() {
     fetchJobs();
   }, []);
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleFilterChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value, type, checked } = e.target;
     setFilters(prev => ({
       ...prev,
@@ -30,67 +32,62 @@ export default function Home() {
     }));
   };
 
-  const filteredJobs = jobs.filter(job => {
-    const matchesDepartment = filters.department ? job.department === filters.department : true;
-    const matchesPublisher = filters.publisher ? job.publisher === filters.publisher : true;
-    const matchesType = filters.jobType ? job.jobType === filters.jobType : true;
-    const matchesRemote = filters.remoteOnly ? job.remoteAllowed : true;
-    return matchesDepartment && matchesPublisher && matchesType && matchesRemote;
-  });
-
-  const grouped = filteredJobs.reduce((acc, job) => {
-    acc[job.publisher] = acc[job.publisher] || [];
-    acc[job.publisher].push(job);
-    return acc;
-  }, {} as Record<string, JobPosting[]>);
+  const filteredJobs = jobs.filter(job =>
+    (filters.department === "" || job.department === filters.department) &&
+    (filters.publisher === "" || job.publisher === filters.publisher) &&
+    (filters.jobType === "" || job.jobType === filters.jobType) &&
+    (!filters.remoteOnly || job.remote === true)
+  );
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold text-center">Job Listings</h1>
+    <div className="p-4">
+      <h1 className="text-2xl font-bold mb-4">Job Listings</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 border p-4 rounded bg-gray-50">
-        <Input placeholder="Department" name="department" value={filters.department} onChange={handleFilterChange} />
-        <Input placeholder="Publisher" name="publisher" value={filters.publisher} onChange={handleFilterChange} />
-        <select name="jobType" value={filters.jobType} onChange={handleFilterChange} className="border rounded p-2">
-          <option value="">All Job Types</option>
-          <option value="Full-time">Full-time</option>
-          <option value="Part-time">Part-time</option>
-          <option value="Internship">Internship</option>
-        </select>
-        <label className="flex items-center gap-2">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <Input
+          placeholder="Department"
+          name="department"
+          value={filters.department}
+          onChange={handleFilterChange}
+        />
+        <Input
+          placeholder="Publisher"
+          name="publisher"
+          value={filters.publisher}
+          onChange={handleFilterChange}
+        />
+        <Input
+          placeholder="Job Type"
+          name="jobType"
+          value={filters.jobType}
+          onChange={handleFilterChange}
+        />
+        <label className="flex items-center space-x-2">
           <input
             type="checkbox"
             name="remoteOnly"
             checked={filters.remoteOnly}
             onChange={handleFilterChange}
           />
-          Remote only
+          <span>Remote Only</span>
         </label>
       </div>
 
-      {Object.entries(grouped).map(([publisher, postings]) => (
-        <div key={publisher}>
-          <h2 className="text-xl font-semibold mt-6 mb-3">{publisher}</h2>
-          <ul className="space-y-4">
-            {postings.map((job) => (
-              <li key={job.id} className="border p-4 rounded shadow bg-white">
-                <h3 className="text-lg font-semibold">{job.title}</h3>
-                <p className="text-sm italic">{job.department} — {job.company}</p>
-                <p className="text-sm text-gray-600">{job.location} • {job.jobType}{job.remoteAllowed ? " • Remote OK" : ""}</p>
-                <p className="mt-2">{job.description}</p>
-                <a
-                  href={job.applicationUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block mt-3 text-blue-600 underline"
-                >
-                  Apply Now
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ))}
+      {filteredJobs.length === 0 ? (
+        <p>No jobs match your filters.</p>
+      ) : (
+        <ul className="space-y-4">
+          {filteredJobs.map(job => (
+            <li key={job.id} className="border rounded-lg p-4 shadow">
+              <h2 className="text-xl font-semibold">{job.title}</h2>
+              <p>Publisher: {job.publisher}</p>
+              <p>Department: {job.department}</p>
+              <p>Type: {job.jobType}</p>
+              <p>{job.remote ? "Remote" : "On-site"}</p>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
