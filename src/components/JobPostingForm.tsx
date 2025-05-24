@@ -13,7 +13,9 @@ interface JobPostingFormProps {
   isOpen: boolean;
   onClose: () => void;
   editingJob?: JobPosting;
+  onSaveComplete: () => void;
 }
+
 
 export function JobPostingForm({ isOpen, onClose, editingJob }: JobPostingFormProps) {
   const [formData, setFormData] = useState<Omit<JobPosting, 'id'>>({
@@ -45,6 +47,7 @@ export function JobPostingForm({ isOpen, onClose, editingJob }: JobPostingFormPr
         await addDoc(collection(db, "jobs"), formData);
         console.log("Job added to Firestore.");
       }
+      onSaveComplete();
       onClose();
     } catch (error) {
       console.error("Error saving job:", error);
