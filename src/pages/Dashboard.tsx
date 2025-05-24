@@ -1,25 +1,23 @@
-import { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { useEffect, useState } from "react";
+import { JobPosting } from "../types";
+import { JobPostingForm } from "../components/JobPostingForm";
+import { JobPostingCard } from "../components/JobPostingCard";
+import { Button } from "../components/ui/button";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../lib/firebase";
 
 export default function Dashboard() {
-  const [jobs, setJobs] = useState([]);
-  const [editingIndex, setEditingIndex] = useState(null);
-  const [jobForm, setJobForm] = useState({
-    title: '',
-    company: '',
-    location: '',
-    department: '',
-    description: ''
-  });
+  const [jobs, setJobs] = useState<JobPosting[]>([]);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingJob, setEditingJob] = useState<JobPosting | undefined>(undefined);
 
   const fetchJobs = async () => {
-    const jobCollection = collection(db, 'jobs');
+    const jobCollection = collection(db, "jobs");
     const jobSnapshot = await getDocs(jobCollection);
-    const jobList = jobSnapshot.docs.map(docSnap => ({
-      id: docSnap.id,
-      ...docSnap.data()
-    }));
+    const jobList = jobSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as JobPosting[];
     setJobs(jobList);
   };
 
@@ -27,79 +25,42 @@ export default function Dashboard() {
     fetchJobs();
   }, []);
 
-  const handleChange = (e) => {
-    setJobForm({ ...jobForm, [e.target.name]: e.target.value });
+  const handleAdd = () => {
+    setEditingJob(undefined);
+    setIsFormOpen(true);
   };
 
-  const saveJob = async () => {
-  if (!jobForm.title || !jobForm.company || !jobForm.location) return;
-
-  try {
-    console.log("Submitting job:", jobForm);
-
-    if (editingIndex !== null) {
-      const jobRef = doc(db, 'jobs', jobs[editingIndex].id);
-      await updateDoc(jobRef, jobForm);
-      setEditingIndex(null);
-      console.log("Job updated.");
-    } else {
-      const docRef = await addDoc(collection(db, 'jobs'), jobForm);
-      console.log("Job added with ID:", docRef.id);
-    }
-
-    setJobForm({ title: '', company: '', location: '', department: '', description: '' });
-    fetchJobs();
-  } catch (error) {
-    console.error("Error saving job:", error);
-  }
-};
-
-
-  const deleteJob = async (index) => {
-    const jobRef = doc(db, 'jobs', jobs[index].id);
-    await deleteDoc(jobRef);
-    fetchJobs();
-  };
-
-  const editJob = (index) => {
-    setEditingIndex(index);
-    setJobForm({
-      title: jobs[index].title,
-      company: jobs[index].company,
-      location: jobs[index].location,
-      department: jobs[index].department,
-      description: jobs[index].description
-    });
+  const handleEdit = (job: JobPosting) => {
+    setEditingJob(job);
+    setIsFormOpen(true);
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-4">Manager Dashboard</h1>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 mb-6">
-        <input name="title" placeholder="Job Title" value={jobForm.title} onChange={handleChange} className="border p-2 rounded" />
-        <input name="company" placeholder="Company" value={jobForm.company} onChange={handleChange} className="border p-2 rounded" />
-        <input name="location" placeholder="Location" value={jobForm.location} onChange={handleChange} className="border p-2 rounded" />
-        <input name="department" placeholder="Department" value={jobForm.department} onChange={handleChange} className="border p-2 rounded" />
-        <textarea name="description" placeholder="Job Description" value={jobForm.description} onChange={handleChange} className="border p-2 rounded col-span-full" />
-        <button onClick={saveJob} className="bg-blue-500 text-white px-4 py-2 rounded col-span-full">
-          {editingIndex !== null ? 'Update Job' : 'Add Job'}
-        </button>
+    <div className="p-6 max-w-4xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <Button onClick={handleAdd}>+ Add Job</Button>
       </div>
 
-      <ul>
-        {jobs.map((job, index) => (
-          <li key={index} className="border p-4 mb-4 rounded shadow">
-            <h2 className="text-xl font-semibold">{job.title}</h2>
-            <p className="italic text-sm text-gray-600">{job.department} — {job.company}, {job.location}</p>
-            <p className="mt-2">{job.description}</p>
-            <div className="mt-3 space-x-3">
-              <button onClick={() => editJob(index)} className="text-blue-600">Edit</button>
-              <button onClick={() => deleteJob(index)} className="text-red-600">Delete</button>
-            </div>
-          </li>
+      <div className="space-y-4">
+        {jobs.map((job) => (
+          <JobPostingCard
+            key={job.id}
+            job={job}
+            onEdit={() => handleEdit(job)}
+            onRefresh={fetchJobs}
+          />
         ))}
-      </ul>
+      </div>
+
+      <JobPostingForm
+        isOpen={isFormOpen}
+        onClose={() => {
+          setIsFormOpen(false);
+          fetchJobs();
+        }}
+        editingJob={editingJob}
+      />
     </div>
   );
 }
