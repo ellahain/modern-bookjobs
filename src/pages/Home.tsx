@@ -48,7 +48,6 @@ export default function Home() {
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <h1 className="text-3xl font-bold text-center">Job Listings</h1>
 
-      {/* Filter controls */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 border p-4 rounded bg-gray-50">
         <Input placeholder="Department" name="department" value={filters.department} onChange={handleFilterChange} />
         <Input placeholder="Publisher" name="publisher" value={filters.publisher} onChange={handleFilterChange} />
@@ -69,7 +68,6 @@ export default function Home() {
         </label>
       </div>
 
-      {/* Job listings */}
       {Object.entries(grouped).map(([publisher, postings]) => (
         <div key={publisher}>
           <h2 className="text-xl font-semibold mt-6 mb-3">{publisher}</h2>
