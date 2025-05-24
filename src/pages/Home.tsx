@@ -1,14 +1,19 @@
 import { useEffect, useState } from 'react';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 export default function Home() {
   const [jobs, setJobs] = useState([]);
 
-  // Placeholder for simulating loaded job data (to be replaced by API in real use)
   useEffect(() => {
-    const storedJobs = localStorage.getItem('jobs');
-    if (storedJobs) {
-      setJobs(JSON.parse(storedJobs));
-    }
+    const fetchJobs = async () => {
+      const jobCollection = collection(db, 'jobs');
+      const jobSnapshot = await getDocs(jobCollection);
+      const jobList = jobSnapshot.docs.map(doc => doc.data());
+      setJobs(jobList);
+    };
+
+    fetchJobs();
   }, []);
 
   return (
