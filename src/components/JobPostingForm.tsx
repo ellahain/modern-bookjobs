@@ -71,36 +71,48 @@ export function JobPostingForm({
       if (editingJob?.id) {
         const jobRef = doc(db, "jobs", editingJob.id);
         await updateDoc(jobRef, formData);
-        console.log("Job updated.");
       } else {
         await addDoc(collection(db, "jobs"), formData);
-        console.log("Job added.");
       }
-      onSaveComplete(); // trigger dashboard refresh
-      onClose(); // close modal
+      onSaveComplete();  // refresh job list
+      onClose();         // close modal
     } catch (error) {
       console.error("Error saving job:", error);
     }
   };
 
-return (
-  <Dialog open={isOpen} onOpenChange={(open) => {
-    if (!open) onClose();
-  }}>
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>{editingJob ? "Edit Job" : "Add Job"}</DialogTitle>
-      </DialogHeader>
-      <div className="grid gap-4 py-4">
-        {/* keep your inputs here */}
-      </div>
-      <DialogFooter>
-        <Button onClick={handleSubmit}>
-          {editingJob ? "Update Job" : "Post Job"}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-);
-
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{editingJob ? "Edit Job" : "Add Job"}</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <Input name="title" value={formData.title} onChange={handleChange} placeholder="Job Title" />
+          <Input name="company" value={formData.company} onChange={handleChange} placeholder="Company" />
+          <Input name="publisher" value={formData.publisher} onChange={handleChange} placeholder="Publisher" />
+          <Input name="location" value={formData.location} onChange={handleChange} placeholder="Location" />
+          <Textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" />
+          <Textarea name="requirements" value={formData.requirements} onChange={handleChange} placeholder="Requirements" />
+          <Input name="applicationUrl" value={formData.applicationUrl} onChange={handleChange} placeholder="Application URL" />
+          <Input name="postedDate" type="date" value={formData.postedDate} onChange={handleChange} />
+          <div className="flex items-center gap-2">
+            <Label htmlFor="isActive">Active</Label>
+            <Switch
+              id="isActive"
+              checked={formData.isActive}
+              onCheckedChange={(value) =>
+                setFormData((prev) => ({ ...prev, isActive: value }))
+              }
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button onClick={handleSubmit}>
+            {editingJob ? "Update Job" : "Post Job"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
