@@ -17,7 +17,7 @@ interface JobPostingFormProps {
 }
 
 
-export function JobPostingForm({ isOpen, onClose, editingJob }: JobPostingFormProps) {
+export function JobPostingForm({ isOpen, onClose, editingJob, onSaveComplete }: JobPostingFormProps) {
   const [formData, setFormData] = useState<Omit<JobPosting, 'id'>>({
     title: editingJob?.title || "",
     company: editingJob?.company || "",
