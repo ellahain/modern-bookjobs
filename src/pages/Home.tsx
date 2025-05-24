@@ -1,49 +1,98 @@
-import { useEffect, useState } from 'react';
-import { collection, getDocs } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { useEffect, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../lib/firebase";
+import { JobPosting } from "../types";
+import { Input } from "../components/ui/input";
 
 export default function Home() {
-  const [jobs, setJobs] = useState([]);
+  const [jobs, setJobs] = useState<JobPosting[]>([]);
+  const [filters, setFilters] = useState({
+    department: "",
+    publisher: "",
+    jobType: "",
+    remoteOnly: false,
+  });
 
   useEffect(() => {
     const fetchJobs = async () => {
-      const jobCollection = collection(db, 'jobs');
-      const jobSnapshot = await getDocs(jobCollection);
-      const jobList = jobSnapshot.docs.map(doc => doc.data());
-      setJobs(jobList);
+      const snap = await getDocs(collection(db, "jobs"));
+      const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as JobPosting));
+      setJobs(list);
     };
-
     fetchJobs();
   }, []);
 
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type, checked } = e.target;
+    setFilters(prev => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
+
+  const filteredJobs = jobs.filter(job => {
+    const matchesDepartment = filters.department ? job.department === filters.department : true;
+    const matchesPublisher = filters.publisher ? job.publisher === filters.publisher : true;
+    const matchesType = filters.jobType ? job.jobType === filters.jobType : true;
+    const matchesRemote = filters.remoteOnly ? job.remoteAllowed : true;
+    return matchesDepartment && matchesPublisher && matchesType && matchesRemote;
+  });
+
+  const grouped = filteredJobs.reduce((acc, job) => {
+    acc[job.publisher] = acc[job.publisher] || [];
+    acc[job.publisher].push(job);
+    return acc;
+  }, {} as Record<string, JobPosting[]>);
+
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-4 text-center">Job Listings</h1>
-      {jobs.length === 0 ? (
-        <p className="text-center text-gray-500">No job listings available.</p>
-      ) : (
-        <ul className="grid gap-4">
-          {jobs.map((job, index) => (
-            <li key={index} className="border p-4 mb-4 rounded shadow">
-              <h2 className="text-xl font-semibold">{job.title}</h2>
-              <p className="italic text-sm text-gray-600">
-                {job.department} — {job.company}, {job.location}
-              </p>
-              <p className="mt-2">{job.description}</p>
-              {job.applicationUrl && (
+    <div className="p-6 max-w-5xl mx-auto space-y-6">
+      <h1 className="text-3xl font-bold text-center">Job Listings</h1>
+
+      {/* Filter controls */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 border p-4 rounded bg-gray-50">
+        <Input placeholder="Department" name="department" value={filters.department} onChange={handleFilterChange} />
+        <Input placeholder="Publisher" name="publisher" value={filters.publisher} onChange={handleFilterChange} />
+        <select name="jobType" value={filters.jobType} onChange={handleFilterChange} className="border rounded p-2">
+          <option value="">All Job Types</option>
+          <option value="Full-time">Full-time</option>
+          <option value="Part-time">Part-time</option>
+          <option value="Internship">Internship</option>
+        </select>
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            name="remoteOnly"
+            checked={filters.remoteOnly}
+            onChange={handleFilterChange}
+          />
+          Remote only
+        </label>
+      </div>
+
+      {/* Job listings */}
+      {Object.entries(grouped).map(([publisher, postings]) => (
+        <div key={publisher}>
+          <h2 className="text-xl font-semibold mt-6 mb-3">{publisher}</h2>
+          <ul className="space-y-4">
+            {postings.map((job) => (
+              <li key={job.id} className="border p-4 rounded shadow bg-white">
+                <h3 className="text-lg font-semibold">{job.title}</h3>
+                <p className="text-sm italic">{job.department} — {job.company}</p>
+                <p className="text-sm text-gray-600">{job.location} • {job.jobType}{job.remoteAllowed ? " • Remote OK" : ""}</p>
+                <p className="mt-2">{job.description}</p>
                 <a
                   href={job.applicationUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-600 underline mt-2 block"
+                  className="inline-block mt-3 text-blue-600 underline"
                 >
                   Apply Now
                 </a>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
     </div>
   );
 }
