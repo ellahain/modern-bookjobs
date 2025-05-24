@@ -35,6 +35,11 @@ export default function Dashboard() {
     setIsFormOpen(true);
   };
 
+  const handleCloseForm = () => {
+    setIsFormOpen(false);
+    setEditingJob(undefined);
+  };
+
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-6">
@@ -53,17 +58,14 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <JobPostingForm
-  isOpen={isFormOpen}
-  onClose={() => setIsFormOpen(false)}
-  editingJob={editingJob}
-  onSaveComplete={() => {
-    fetchJobs();
-    setIsFormOpen(false);
-  }}
-/>
-
-
+      {isFormOpen && (
+        <JobPostingForm
+          isOpen={isFormOpen}
+          onClose={handleCloseForm}
+          editingJob={editingJob}
+          onSaveComplete={fetchJobs}
+        />
+      )}
     </div>
   );
 }
