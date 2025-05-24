@@ -54,13 +54,12 @@ export default function Dashboard() {
       </div>
 
       <JobPostingForm
-        isOpen={isFormOpen}
-        onClose={() => {
-          setIsFormOpen(false);
-          fetchJobs();
-        }}
-        editingJob={editingJob}
-      />
+  isOpen={isFormOpen}
+  onClose={() => setIsFormOpen(false)}
+  editingJob={editingJob}
+  onSaveComplete={fetchJobs}
+/>
+
     </div>
   );
 }
