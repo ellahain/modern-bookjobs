@@ -5,9 +5,9 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Switch } from "./ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { db } from "../lib/firebase";
+import { addDoc, updateDoc, collection, doc } from "firebase/firestore";
 import { JobPosting } from "../types";
-import { useJobPostingsStore } from "../lib/store";
 
 interface JobPostingFormProps {
   isOpen: boolean;
@@ -16,8 +16,6 @@ interface JobPostingFormProps {
 }
 
 export function JobPostingForm({ isOpen, onClose, editingJob }: JobPostingFormProps) {
-  const { publishers, addJobPosting, updateJobPosting } = useJobPostingsStore();
-  
   const [formData, setFormData] = useState<Omit<JobPosting, 'id'>>({
     title: editingJob?.title || "",
     company: editingJob?.company || "",
@@ -37,170 +35,51 @@ export function JobPostingForm({ isOpen, onClose, editingJob }: JobPostingFormPr
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSwitchChange = (checked: boolean) => {
-    setFormData((prev) => ({ ...prev, isActive: checked }));
-  };
-
-  const handlePublisherChange = (value: string) => {
-    setFormData((prev) => ({ ...prev, publisher: value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (editingJob) {
-      updateJobPosting(editingJob.id, formData);
-    } else {
-      addJobPosting(formData);
+  const handleSubmit = async () => {
+    try {
+      if (editingJob?.id) {
+        const jobRef = doc(db, "jobs", editingJob.id);
+        await updateDoc(jobRef, formData);
+        console.log("Job updated in Firestore.");
+      } else {
+        await addDoc(collection(db, "jobs"), formData);
+        console.log("Job added to Firestore.");
+      }
+      onClose();
+    } catch (error) {
+      console.error("Error saving job:", error);
     }
-    
-    onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            {editingJob ? "Edit Job Posting" : "Add New Job Posting"}
-          </DialogTitle>
+          <DialogTitle>{editingJob ? "Edit Job" : "Add Job"}</DialogTitle>
         </DialogHeader>
-        
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Job Title</Label>
-              <Input
-                id="title"
-                name="title"
-                value={formData.title}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="company">Company</Label>
-              <Input
-                id="company"
-                name="company"
-                value={formData.company}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="publisher">Publisher</Label>
-              {publishers.length > 0 ? (
-                <Select
-                  value={formData.publisher}
-                  onValueChange={handlePublisherChange}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a publisher" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {publishers.map((pub) => (
-                      <SelectItem key={pub.id} value={pub.name}>
-                        {pub.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  id="publisher"
-                  name="publisher"
-                  value={formData.publisher}
-                  onChange={handleChange}
-                  required
-                />
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="location">Location</Label>
-              <Input
-                id="location"
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              rows={4}
-              required
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="requirements">Requirements</Label>
-            <Textarea
-              id="requirements"
-              name="requirements"
-              value={formData.requirements}
-              onChange={handleChange}
-              rows={4}
-              required
-            />
-          </div>
-          
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="applicationUrl">Application URL</Label>
-              <Input
-                id="applicationUrl"
-                name="applicationUrl"
-                type="url"
-                value={formData.applicationUrl}
-                onChange={handleChange}
-                required
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="postedDate">Posted Date</Label>
-              <Input
-                id="postedDate"
-                name="postedDate"
-                type="date"
-                value={formData.postedDate}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
+        <div className="grid gap-4 py-4">
+          <Input name="title" value={formData.title} onChange={handleChange} placeholder="Job Title" />
+          <Input name="company" value={formData.company} onChange={handleChange} placeholder="Company" />
+          <Input name="publisher" value={formData.publisher} onChange={handleChange} placeholder="Publisher" />
+          <Input name="location" value={formData.location} onChange={handleChange} placeholder="Location" />
+          <Textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" />
+          <Textarea name="requirements" value={formData.requirements} onChange={handleChange} placeholder="Requirements" />
+          <Input name="applicationUrl" value={formData.applicationUrl} onChange={handleChange} placeholder="Application URL" />
+          <Input name="postedDate" type="date" value={formData.postedDate} onChange={handleChange} />
+          <div className="flex items-center gap-2">
+            <Label htmlFor="isActive">Active</Label>
             <Switch
               id="isActive"
               checked={formData.isActive}
-              onCheckedChange={handleSwitchChange}
+              onCheckedChange={(value) => setFormData((prev) => ({ ...prev, isActive: value }))}
             />
-            <Label htmlFor="isActive">Active Listing</Label>
           </div>
-          
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit">
-              {editingJob ? "Update" : "Add"} Job Posting
-            </Button>
-          </DialogFooter>
-        </form>
+        </div>
+        <DialogFooter>
+          <Button onClick={handleSubmit}>
+            {editingJob ? "Update Job" : "Post Job"}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
