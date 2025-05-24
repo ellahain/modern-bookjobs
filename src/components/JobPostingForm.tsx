@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,8 +12,8 @@ import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { Switch } from "./ui/switch";
 import { db } from "../lib/firebase";
-import { addDoc, updateDoc, collection, doc } from "firebase/firestore";
-import { JobPosting } from "../types";
+import { collection, getDocs, addDoc, updateDoc, doc } from "firebase/firestore";
+import { JobPosting, Publisher } from "../types";
 
 interface JobPostingFormProps {
   isOpen: boolean;
@@ -33,12 +33,26 @@ export function JobPostingForm({
     company: "",
     publisher: "",
     location: "",
+    department: "",
+    jobType: "Full-time",
+    remoteAllowed: false,
     description: "",
     requirements: "",
     applicationUrl: "",
     postedDate: new Date().toISOString().split("T")[0],
     isActive: true,
   });
+
+  const [publishers, setPublishers] = useState<Publisher[]>([]);
+
+  useEffect(() => {
+    const fetchPublishers = async () => {
+      const snap = await getDocs(collection(db, "publishers"));
+      const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Publisher));
+      setPublishers(list);
+    };
+    fetchPublishers();
+  }, []);
 
   useEffect(() => {
     if (editingJob) {
@@ -50,6 +64,9 @@ export function JobPostingForm({
         company: "",
         publisher: "",
         location: "",
+        department: "",
+        jobType: "Full-time",
+        remoteAllowed: false,
         description: "",
         requirements: "",
         applicationUrl: "",
@@ -60,24 +77,23 @@ export function JobPostingForm({
   }, [editingJob]);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async () => {
     try {
       if (editingJob?.id) {
-        const jobRef = doc(db, "jobs", editingJob.id);
-        await updateDoc(jobRef, formData);
+        await updateDoc(doc(db, "jobs", editingJob.id), formData);
       } else {
         await addDoc(collection(db, "jobs"), formData);
       }
       onSaveComplete();
       onClose();
-    } catch (error) {
-      console.error("Error saving job:", error);
+    } catch (err) {
+      console.error("Error submitting job:", err);
     }
   };
 
@@ -85,14 +101,31 @@ export function JobPostingForm({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{editingJob ? "Edit Job" : "Add Job"}</DialogTitle>
+          <DialogTitle>{editingJob ? "Edit Job" : "Post New Job"}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <Input name="title" value={formData.title} onChange={handleChange} placeholder="Job Title" />
           <Input name="company" value={formData.company} onChange={handleChange} placeholder="Company" />
-          <Input name="publisher" value={formData.publisher} onChange={handleChange} placeholder="Publisher" />
+          <select name="publisher" value={formData.publisher} onChange={handleChange} className="border p-2 rounded">
+            <option value="">Select Publisher</option>
+            {publishers.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+          </select>
           <Input name="location" value={formData.location} onChange={handleChange} placeholder="Location" />
-          <Textarea name="description" value={formData.description} onChange={handleChange} placeholder="Description" />
+          <Input name="department" value={formData.department} onChange={handleChange} placeholder="Department" />
+          <select name="jobType" value={formData.jobType} onChange={handleChange} className="border p-2 rounded">
+            <option value="Full-time">Full-time</option>
+            <option value="Part-time">Part-time</option>
+            <option value="Internship">Internship</option>
+          </select>
+          <div className="flex items-center gap-2">
+            <Label htmlFor="remoteAllowed">Remote</Label>
+            <Switch
+              id="remoteAllowed"
+              checked={formData.remoteAllowed}
+              onCheckedChange={(val) => setFormData(prev => ({ ...prev, remoteAllowed: val }))}
+            />
+          </div>
+          <Textarea name="description" value={formData.description} onChange={handleChange} placeholder="Job Description" />
           <Textarea name="requirements" value={formData.requirements} onChange={handleChange} placeholder="Requirements" />
           <Input name="applicationUrl" value={formData.applicationUrl} onChange={handleChange} placeholder="Application URL" />
           <Input name="postedDate" type="date" value={formData.postedDate} onChange={handleChange} />
@@ -101,9 +134,7 @@ export function JobPostingForm({
             <Switch
               id="isActive"
               checked={formData.isActive}
-              onCheckedChange={(value) =>
-                setFormData((prev) => ({ ...prev, isActive: value }))
-              }
+              onCheckedChange={(val) => setFormData(prev => ({ ...prev, isActive: val }))}
             />
           </div>
         </div>
