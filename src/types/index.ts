@@ -4,6 +4,9 @@ export interface JobPosting {
   company: string;
   publisher: string;
   location: string;
+  department: string;
+  jobType: "Full-time" | "Part-time" | "Internship";
+  remoteAllowed: boolean;
   description: string;
   requirements: string;
   applicationUrl: string;
