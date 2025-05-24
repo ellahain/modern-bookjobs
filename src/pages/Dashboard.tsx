@@ -57,8 +57,12 @@ export default function Dashboard() {
   isOpen={isFormOpen}
   onClose={() => setIsFormOpen(false)}
   editingJob={editingJob}
-  onSaveComplete={fetchJobs}
+  onSaveComplete={() => {
+    fetchJobs();
+    setIsFormOpen(false);
+  }}
 />
+
 
     </div>
   );
