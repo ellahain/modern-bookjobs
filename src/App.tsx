@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { ThemeProvider } from "./components/ui/theme-provider";
-import { Dashboard } from "./components/Dashboard";
+import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home"; // Make sure this path matches
 
 function ProtectedDashboard() {
