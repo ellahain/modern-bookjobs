@@ -57,7 +57,7 @@ export function JobPostingForm({
         isActive: true,
       });
     }
-  }, [editingJob, isOpen]);
+  }, [editingJob]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -74,8 +74,8 @@ export function JobPostingForm({
       } else {
         await addDoc(collection(db, "jobs"), formData);
       }
-      onSaveComplete();  // refresh job list
-      onClose();         // close modal
+      onSaveComplete();
+      onClose();
     } catch (error) {
       console.error("Error saving job:", error);
     }
