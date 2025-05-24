@@ -32,19 +32,28 @@ export default function Dashboard() {
   };
 
   const saveJob = async () => {
-    if (!jobForm.title || !jobForm.company || !jobForm.location) return;
+  if (!jobForm.title || !jobForm.company || !jobForm.location) return;
+
+  try {
+    console.log("Submitting job:", jobForm);
 
     if (editingIndex !== null) {
       const jobRef = doc(db, 'jobs', jobs[editingIndex].id);
       await updateDoc(jobRef, jobForm);
       setEditingIndex(null);
+      console.log("Job updated.");
     } else {
-      await addDoc(collection(db, 'jobs'), jobForm);
+      const docRef = await addDoc(collection(db, 'jobs'), jobForm);
+      console.log("Job added with ID:", docRef.id);
     }
 
     setJobForm({ title: '', company: '', location: '', department: '', description: '' });
     fetchJobs();
-  };
+  } catch (error) {
+    console.error("Error saving job:", error);
+  }
+};
+
 
   const deleteJob = async (index) => {
     const jobRef = doc(db, 'jobs', jobs[index].id);
