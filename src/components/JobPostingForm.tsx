@@ -55,7 +55,13 @@ export function JobPostingForm({ isOpen, onClose, editingJob, onSaveComplete }: 
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog
+  open={isOpen}
+  onOpenChange={(open) => {
+    if (!open) onClose();
+  }}
+>
+
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{editingJob ? "Edit Job" : "Add Job"}</DialogTitle>
