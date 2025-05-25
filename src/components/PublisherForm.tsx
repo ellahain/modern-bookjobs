@@ -1,3 +1,5 @@
+// trigger deploy
+
 import { useState, useEffect } from "react";
 import { db } from "../lib/firebase";
 import { collection, addDoc, deleteDoc, doc, getDocs } from "firebase/firestore";
