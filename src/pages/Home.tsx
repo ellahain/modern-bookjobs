@@ -1,5 +1,3 @@
-// trigger deploy
-
 import { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
@@ -18,9 +16,13 @@ export default function Home() {
   useEffect(() => {
     const fetchJobs = async () => {
       const snap = await getDocs(collection(db, "jobs"));
-      const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as JobPosting));
+      const list = snap.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as JobPosting[];
       setJobs(list);
     };
+
     fetchJobs();
   }, []);
 
@@ -28,17 +30,17 @@ export default function Home() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value, type, checked } = e.target;
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
 
-  const filteredJobs = jobs.filter(job =>
-    (filters.department === "" || job.department === filters.department) &&
-    (filters.publisher === "" || job.publisher === filters.publisher) &&
-    (filters.jobType === "" || job.jobType === filters.jobType) &&
-    (!filters.remoteOnly || job.remote === true)
+  const filteredJobs = jobs.filter((job) =>
+    (!filters.department || job.department === filters.department) &&
+    (!filters.publisher || job.publisher === filters.publisher) &&
+    (!filters.jobType || job.jobType === filters.jobType) &&
+    (!filters.remoteOnly || job.remoteAllowed === true)
   );
 
   return (
@@ -79,13 +81,23 @@ export default function Home() {
         <p>No jobs match your filters.</p>
       ) : (
         <ul className="space-y-4">
-          {filteredJobs.map(job => (
+          {filteredJobs.map((job) => (
             <li key={job.id} className="border rounded-lg p-4 shadow">
               <h2 className="text-xl font-semibold">{job.title}</h2>
+              <p>Company: {job.company}</p>
               <p>Publisher: {job.publisher}</p>
               <p>Department: {job.department}</p>
               <p>Type: {job.jobType}</p>
-              <p>{job.remote ? "Remote" : "On-site"}</p>
+              <p>Location: {job.location}</p>
+              <p>{job.remoteAllowed ? "Remote" : "On-site"}</p>
+              <a
+                className="text-blue-600 underline"
+                href={job.applicationUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Apply here
+              </a>
             </li>
           ))}
         </ul>
