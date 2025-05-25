@@ -1,3 +1,5 @@
+// trigger deploy
+
 import { useEffect, useState } from "react";
 import { JobPosting } from "../types";
 import { JobPostingForm } from "../components/JobPostingForm";
